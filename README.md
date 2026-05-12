@@ -21,3 +21,16 @@ vpp_system/
 │   └── requirements.txt
 └── frontend/
     └── index.html           # [UPDATED] Adds charts & DR button
+
+vpp_system/
+├── backend/
+│   ├── config.yaml
+│   ├── database.py          # Updated with Revenue models
+│   ├── iot_simulator.py
+│   ├── optimizer.py
+│   ├── main.py
+│   ├── finance.py           # [NEW] Revenue & Settlement logic
+│   ├── alerts.py            # [NEW] Notification system
+│   └── forecaster.py        # [NEW] Load prediction
+└── frontend/
+    └── index.html           # [UPDATED] Financial dashboard & Alerts

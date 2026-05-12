@@ -3,76 +3,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>VPP Pro Dashboard</title>
+    <title>VPP Enterprise Dashboard</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; padding: 20px; }
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
-        .card { background: #16213e; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        h1 { text-align: center; color: #0f3460; text-shadow: 1px 1px #e94560; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; max-width: 1400px; margin: 0 auto; }
         
-        /* Battery Gauge CSS */
-        .battery-gauge { width: 150px; height: 250px; border: 10px solid #333; border-radius: 10px; margin: 0 auto; position: relative; overflow: hidden; }
-        .battery-level { position: absolute; bottom: 0; width: 100%; background: #0f3460; transition: height 0.5s, background 0.5s; }
-        .battery-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; font-weight: bold; z-index: 10; }
+        /* Cards */
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+        .kpi-value { font-size: 24px; font-weight: bold; margin-top: 10px; }
+        .kpi-label { color: #94a3b8; font-size: 14px; }
+        .text-green { color: #4ade80; }
+        .text-red { color: #f87171; }
         
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        .btn-opt { background: #0f3460; color: white; }
-        .btn-dr { background: #e94560; color: white; }
-        .btn-dr.active { background: #ff2e63; box-shadow: 0 0 15px #ff2e63; }
+        /* Battery */
+        .battery-container { display: flex; justify-content: center; align-items: center; height: 200px; }
+        .battery { width: 80px; height: 180px; border: 4px solid #475569; border-radius: 10px; position: relative; }
+        .liquid { position: absolute; bottom: 0; width: 100%; background: #3b82f6; transition: height 0.5s; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
+        /* Alerts */
+        .alert-item { padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 12px; }
+        .alert-critical { background: #450a0a; border-left: 4px solid #ef4444; }
+        .alert-warning { background: #451a03; border-left: 4px solid #f59e0b; }
+        
+        /* Table */
+        .full-width { grid-column: span 4; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; color: #94a3b8; padding: 10px; border-bottom: 1px solid #334155; }
+        td { padding: 10px; border-bottom: 1px solid #334155; }
+        
+        button { width: 100%; padding: 10px; margin-top: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-dr { background: #ef4444; color: white; }
+        .btn-opt { background: #3b82f6; color: white; }
     </style>
 </head>
 <body>
     <div id="app">
-        <h1>⚡ VPP Command Center</h1>
-        
-        <div class="dashboard">
-            <!-- Left Column: Real-time Status -->
+        <div class="header">
+            <h1>⚡ VPP Enterprise Control Center</h1>
+            <p>Real-time Asset Management & Settlement</p>
+        </div>
+
+        <div class="grid">
+            <!-- KPI: Finance -->
             <div class="card">
-                <h2>Live Telemetry</h2>
-                <div class="battery-gauge">
-                    <div class="battery-level" :style="{ height: telemetry.soc + '%', background: telemetry.mode === 'CHARGE' ? '#4caf50' : '#e94560' }"></div>
-                    <div class="battery-text">{{ telemetry.soc }}%</div>
+                <div class="kpi-label">Net Revenue (Session)</div>
+                <div class="kpi-value" :class="finance.net_profit >= 0 ? 'text-green' : 'text-red'">
+                    ${{ finance.net_profit }}
                 </div>
-                <p style="text-align: center; margin-top: 15px;">
-                    Power: <strong>{{ telemetry.power }} kW</strong> <br>
-                    Status: <strong>{{ telemetry.mode }}</strong>
-                </p>
             </div>
 
-            <!-- Right Column: Controls -->
+            <!-- KPI: Battery -->
             <div class="card">
-                <h2>Operations</h2>
-                <button class="btn btn-opt" @click="runOptimization(false)">Run Economic Optimization</button>
-                <button class="btn btn-dr" :class="{ active: drActive }" @click="toggleDR">
-                    {{ drActive ? '🔴 STOP DEMAND RESPONSE' : '⚠️ TRIGGER DEMAND RESPONSE' }}
-                </button>
-                <p v-if="drActive" style="color: #ff2e63; text-align: center; font-weight: bold;">
-                    ⚡ GRID EMERGENCY: Discharging Battery!
-                </p>
+                <div class="kpi-label">State of Charge</div>
+                <div class="battery-container">
+                    <div class="battery">
+                        <div class="liquid" :style="{ height: telemetry.soc + '%' }"></div>
+                    </div>
+                </div>
+                <div style="text-align: center;">{{ telemetry.soc }}%</div>
             </div>
 
-            <!-- Bottom: Schedule Table -->
-            <div class="card" style="grid-column: span 2;">
-                <h2>Dispatch Schedule</h2>
+            <!-- KPI: Forecast -->
+            <div class="card">
+                <div class="kpi-label">Tomorrow's Peak Load</div>
+                <div class="kpi-value">{{ forecastPeak }} kW</div>
+                <div class="kpi-label">Predicted at 17:00</div>
+            </div>
+
+            <!-- Controls -->
+            <div class="card">
+                <div class="kpi-label">Manual Override</div>
+                <button class="btn-opt" @click="runOptimization(false)">Run Optimization</button>
+                <button class="btn-dr" @click="toggleDR">TRIGGER DR EVENT</button>
+            </div>
+
+            <!-- Alerts Feed -->
+            <div class="card full-width">
+                <h3>System Alerts</h3>
+                <div v-for="alert in alerts" :class="['alert-item', 'alert-' + alert.severity.toLowerCase()]">
+                    <strong>[{{ alert.timestamp }}]</strong> {{ alert.message }}
+                </div>
+                <div v-if="alerts.length === 0" style="color: #64748b; padding: 10px;">System Normal</div>
+            </div>
+
+            <!-- Schedule Table -->
+            <div class="card full-width">
+                <h3>Dispatch Schedule</h3>
                 <table>
                     <thead>
                         <tr>
                             <th>Time</th>
-                            <th>Action</th>
-                            <th>Power (kW)</th>
+                            <th>Strategy</th>
+                            <th>Battery Power</th>
+                            <th>Grid Impact</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(item, index) in schedule" :key="index">
+                        <tr v-for="item in schedule" :key="item.hour">
                             <td>{{ item.hour }}</td>
-                            <td>{{ item.battery_kw > 0 ? '🔋 Charge' : '⚡ Discharge' }}</td>
-                            <td :style="{ color: item.battery_kw > 0 ? '#4caf50' : '#e94560' }">
+                            <td>{{ item.battery_kw > 0 ? 'Arbitrage (Charge)' : 'Discharge' }}</td>
+                            <td :class="item.battery_kw > 0 ? 'text-green' : 'text-red'">
                                 {{ Math.abs(item.battery_kw) }} kW
                             </td>
+                            <td>{{ item.battery_kw > 0 ? 'Reducing Load' : 'Supporting Grid' }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -86,29 +121,46 @@
         createApp({
             data() {
                 return {
-                    telemetry: { soc: 0, power: 0, mode: "OFFLINE" },
+                    telemetry: { soc: 50, power: 0 },
+                    finance: { net_profit: 0, gross_revenue: 0 },
+                    alerts: [],
                     schedule: [],
-                    drActive: false
+                    forecastPeak: 0
                 }
             },
             methods: {
-                async fetchTelemetry() {
-                    const res = await fetch('http://127.0.0.1:8000/telemetry');
-                    this.telemetry = await res.json();
+                async updateDashboard() {
+                    // 1. Telemetry
+                    const tRes = await fetch('http://127.0.0.1:8000/telemetry');
+                    this.telemetry = await tRes.json();
+
+                    // 2. Finance
+                    const fRes = await fetch('http://127.0.0.1:8000/finance');
+                    this.finance = await fRes.json();
+
+                    // 3. Alerts
+                    const aRes = await fetch('http://127.0.0.1:8000/alerts');
+                    this.alerts = await aRes.json();
+                    
+                    // 4. Forecast (Mock)
+                    const fcRes = await fetch('http://127.0.0.1:8000/forecast');
+                    const fcData = await fcRes.json();
+                    this.forecastPeak = Math.max(...fcData.map(d => d.predicted_load_kw));
                 },
                 async runOptimization(dr = false) {
+                    await fetch(`http://127.0.0.1:8000/dispatch?dr_active=${dr}`);
                     const res = await fetch(`http://127.0.0.1:8000/dispatch?dr_active=${dr}`);
                     const json = await res.json();
                     this.schedule = json.data;
-                    this.drActive = json.dr_active;
+                    this.updateDashboard(); // Refresh alerts
                 },
                 toggleDR() {
-                    this.drActive = !this.drActive;
-                    this.runOptimization(this.drActive);
+                    this.runOptimization(true);
                 }
             },
             mounted() {
-                setInterval(this.fetchTelemetry, 1000); // Poll every second
+                this.runOptimization(false); // Initial load
+                setInterval(this.updateDashboard, 2000); // Live updates
             }
         }).mount('#app');
     </script>
