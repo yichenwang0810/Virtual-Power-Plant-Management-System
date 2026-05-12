@@ -3,45 +3,80 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>VPP Control Center</title>
+    <title>VPP Pro Dashboard</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { color: #333; text-align: center; }
-        .btn { display: block; width: 100%; padding: 10px; background: #1890ff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
-        .btn:hover { background: #40a9ff; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
-        th { background: #fafafa; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: white; padding: 20px; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .card { background: #16213e; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        h1 { text-align: center; color: #0f3460; text-shadow: 1px 1px #e94560; }
+        
+        /* Battery Gauge CSS */
+        .battery-gauge { width: 150px; height: 250px; border: 10px solid #333; border-radius: 10px; margin: 0 auto; position: relative; overflow: hidden; }
+        .battery-level { position: absolute; bottom: 0; width: 100%; background: #0f3460; transition: height 0.5s, background 0.5s; }
+        .battery-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; font-weight: bold; z-index: 10; }
+        
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-opt { background: #0f3460; color: white; }
+        .btn-dr { background: #e94560; color: white; }
+        .btn-dr.active { background: #ff2e63; box-shadow: 0 0 15px #ff2e63; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
     </style>
 </head>
 <body>
-    <div id="app" class="container">
-        <h1>⚡ Virtual Power Plant Dashboard</h1>
-        <button class="btn" @click="fetchSchedule">Run Optimization & Get Schedule</button>
+    <div id="app">
+        <h1>⚡ VPP Command Center</h1>
         
-        <div v-if="schedule.length > 0">
-            <h3>24-Hour Dispatch Strategy</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Battery Action (kW)</th>
-                        <th>Grid Import (kW)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(item, index) in schedule" :key="index">
-                        <td>{{ item.hour }}</td>
-                        <td :style="{ color: item.battery_kw > 0 ? 'green' : 'orange' }">
-                            {{ item.battery_kw > 0 ? 'Charging' : 'Discharging' }} ({{ Math.abs(item.battery_kw) }})
-                        </td>
-                        <td>{{ item.grid_kw }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="dashboard">
+            <!-- Left Column: Real-time Status -->
+            <div class="card">
+                <h2>Live Telemetry</h2>
+                <div class="battery-gauge">
+                    <div class="battery-level" :style="{ height: telemetry.soc + '%', background: telemetry.mode === 'CHARGE' ? '#4caf50' : '#e94560' }"></div>
+                    <div class="battery-text">{{ telemetry.soc }}%</div>
+                </div>
+                <p style="text-align: center; margin-top: 15px;">
+                    Power: <strong>{{ telemetry.power }} kW</strong> <br>
+                    Status: <strong>{{ telemetry.mode }}</strong>
+                </p>
+            </div>
+
+            <!-- Right Column: Controls -->
+            <div class="card">
+                <h2>Operations</h2>
+                <button class="btn btn-opt" @click="runOptimization(false)">Run Economic Optimization</button>
+                <button class="btn btn-dr" :class="{ active: drActive }" @click="toggleDR">
+                    {{ drActive ? '🔴 STOP DEMAND RESPONSE' : '⚠️ TRIGGER DEMAND RESPONSE' }}
+                </button>
+                <p v-if="drActive" style="color: #ff2e63; text-align: center; font-weight: bold;">
+                    ⚡ GRID EMERGENCY: Discharging Battery!
+                </p>
+            </div>
+
+            <!-- Bottom: Schedule Table -->
+            <div class="card" style="grid-column: span 2;">
+                <h2>Dispatch Schedule</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Action</th>
+                            <th>Power (kW)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, index) in schedule" :key="index">
+                            <td>{{ item.hour }}</td>
+                            <td>{{ item.battery_kw > 0 ? '🔋 Charge' : '⚡ Discharge' }}</td>
+                            <td :style="{ color: item.battery_kw > 0 ? '#4caf50' : '#e94560' }">
+                                {{ Math.abs(item.battery_kw) }} kW
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -51,20 +86,29 @@
         createApp({
             data() {
                 return {
-                    schedule: []
+                    telemetry: { soc: 0, power: 0, mode: "OFFLINE" },
+                    schedule: [],
+                    drActive: false
                 }
             },
             methods: {
-                async fetchSchedule() {
-                    this.schedule = []; // Clear previous
-                    try {
-                        const response = await fetch('http://127.0.0.1:8000/dispatch');
-                        const json = await response.json();
-                        this.schedule = json.data;
-                    } catch (error) {
-                        alert("Error connecting to backend. Make sure main.py is running!");
-                    }
+                async fetchTelemetry() {
+                    const res = await fetch('http://127.0.0.1:8000/telemetry');
+                    this.telemetry = await res.json();
+                },
+                async runOptimization(dr = false) {
+                    const res = await fetch(`http://127.0.0.1:8000/dispatch?dr_active=${dr}`);
+                    const json = await res.json();
+                    this.schedule = json.data;
+                    this.drActive = json.dr_active;
+                },
+                toggleDR() {
+                    this.drActive = !this.drActive;
+                    this.runOptimization(this.drActive);
                 }
+            },
+            mounted() {
+                setInterval(this.fetchTelemetry, 1000); // Poll every second
             }
         }).mount('#app');
     </script>

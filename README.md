@@ -10,3 +10,14 @@ vpp_system/
 │   └── requirements.txt     # Python dependencies
 └── frontend/
     └── index.html           # Simple Vue.js Dashboard
+
+vpp_system/
+├── backend/
+│   ├── config.yaml
+│   ├── database.py          # [NEW] SQLite Setup & Models
+│   ├── iot_simulator.py     # [NEW] Real-time data generator
+│   ├── optimizer.py         # [UPDATED] Includes DR logic
+│   ├── main.py              # [UPDATED] Adds new endpoints
+│   └── requirements.txt
+└── frontend/
+    └── index.html           # [UPDATED] Adds charts & DR button
