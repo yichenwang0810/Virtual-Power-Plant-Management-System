@@ -1,0 +1,72 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VPP Control Center</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .btn { display: block; width: 100%; padding: 10px; background: #1890ff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        .btn:hover { background: #40a9ff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
+        th { background: #fafafa; }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <h1>⚡ Virtual Power Plant Dashboard</h1>
+        <button class="btn" @click="fetchSchedule">Run Optimization & Get Schedule</button>
+        
+        <div v-if="schedule.length > 0">
+            <h3>24-Hour Dispatch Strategy</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Battery Action (kW)</th>
+                        <th>Grid Import (kW)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(item, index) in schedule" :key="index">
+                        <td>{{ item.hour }}</td>
+                        <td :style="{ color: item.battery_kw > 0 ? 'green' : 'orange' }">
+                            {{ item.battery_kw > 0 ? 'Charging' : 'Discharging' }} ({{ Math.abs(item.battery_kw) }})
+                        </td>
+                        <td>{{ item.grid_kw }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    schedule: []
+                }
+            },
+            methods: {
+                async fetchSchedule() {
+                    this.schedule = []; // Clear previous
+                    try {
+                        const response = await fetch('http://127.0.0.1:8000/dispatch');
+                        const json = await response.json();
+                        this.schedule = json.data;
+                    } catch (error) {
+                        alert("Error connecting to backend. Make sure main.py is running!");
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
