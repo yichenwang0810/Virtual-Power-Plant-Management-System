@@ -2,9 +2,12 @@
 import numpy as np
 from scipy.optimize import minimize
 import yaml
+from pathlib import Path
 
 class VPPScheduler:
-    def __init__(self, config_path='config.yaml'):
+    def __init__(self, config_path=None):
+        if config_path is None:
+            config_path = Path(__file__).resolve().parent / 'config.yaml'
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         self.bat_cap = self.config['system']['battery']['capacity_kwh']
@@ -31,8 +34,10 @@ class VPPScheduler:
                     total_cost += penalty 
                 else:
                     # Normal Economic Dispatch
-                    if p_grid > 0: total_cost += p_grid * prices['buy'][t]
-                    else: total_cost += p_grid * prices['sell'][t]
+                    if p_grid > 0:
+                        total_cost += p_grid * prices['buy_price'][t]
+                    else:
+                        total_cost += p_grid * prices['sell_price'][t]
             return total_cost
 
         bnds = [(-self.bat_p_max, self.bat_p_max) for _ in range(24)]

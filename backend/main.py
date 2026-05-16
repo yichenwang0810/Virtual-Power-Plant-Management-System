@@ -4,13 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 
-from database import get_db, BatteryStatus, EnergyLog
-from optimizer import VPPScheduler
-from data_loader import get_daily_profiles
-from iot_simulator import start_simulator
-from finance import FinanceManager
-from alerts import alert_system
-from forecaster import LoadForecaster
+from backend.database import get_db, BatteryStatus, EnergyLog
+from backend.optimizer import VPPScheduler
+from backend.data_loader import get_daily_profiles
+from backend.iot_simulator import start_simulator
+from backend.finance import FinanceManager
+from backend.alerts import alert_system
+from backend.forecaster import LoadForecaster
 
 app = FastAPI(title="VPP Enterprise System")
 

@@ -148,7 +148,6 @@
                     this.forecastPeak = Math.max(...fcData.map(d => d.predicted_load_kw));
                 },
                 async runOptimization(dr = false) {
-                    await fetch(`http://127.0.0.1:8000/dispatch?dr_active=${dr}`);
                     const res = await fetch(`http://127.0.0.1:8000/dispatch?dr_active=${dr}`);
                     const json = await res.json();
                     this.schedule = json.data;

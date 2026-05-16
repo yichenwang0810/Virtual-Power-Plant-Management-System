@@ -1,6 +1,6 @@
 # backend/finance.py
 from datetime import datetime
-from database import SessionLocal, EnergyLog, BatteryStatus
+from backend.database import SessionLocal, EnergyLog, BatteryStatus
 
 class FinanceManager:
     def __init__(self):

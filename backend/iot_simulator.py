@@ -2,7 +2,7 @@
 import time
 import random
 import threading
-from database import SessionLocal, BatteryStatus, EnergyLog
+from backend.database import SessionLocal, BatteryStatus, EnergyLog
 from datetime import datetime
 
 def simulate_battery_loop():
